@@ -1,0 +1,35 @@
+* Personal finance tracking is essential for
+managing expenses effectively.
+
+* Many people struggle with overspending due
+to lack of proper monitoring.
+
+* This project provides a Python-based Budget
+Management Tool using Tkinter GUI, file
+handling, and data visualization.
+
+A Budget Management Tool is needed to:
+-> Track daily expenses
+-> Categorize spending
+-> Generate visual reports
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+Existing Systems :
+Current Financial Tracking Methods are like ,
+* Manual Tracking (Notebooks/Spreadsheets):
+  -> Users manually enter expenses.
+  -> Prone to errors and lacks automation.
+* Bank Statements & Apps
+    -> Mobile banking apps provide spending insights.
+    -> No offline access or customizable budgeting.
+* Standalone Expense Tracking Apps
+   -> Require subscriptions or internet access.
+   -> Data security concerns with third-party apps. 
+-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+List of Python Libraries Used :
+1. Tkinter/ttk  -> Builds offline GUI (buttons, inputs, tables)
+2. Pandas ->  Manages expense data (CSV read/write, categorization)
+3. Matplotlib ->  Generates visual reports (pie charts, trends)
+4. OS ->  Handles local file storage (no cloud needed)
+================================================================================================================================================================================================================

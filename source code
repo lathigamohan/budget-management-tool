@@ -1,0 +1,162 @@
+import ttkbootstrap as tb
+from ttkbootstrap.constants import *
+import tkinter as tk
+from tkinter import ttk, messagebox
+import pandas as pd
+import matplotlib.pyplot as plt
+import os
+
+# Load or initialize expenses file
+EXPENSES_FILE = "expenses.csv"
+if os.path.exists(EXPENSES_FILE):
+    try:
+        expenses_df = pd.read_csv(EXPENSES_FILE)
+        if expenses_df.empty:
+            expenses_df = pd.DataFrame(columns=["Description", "Amount", "Category"])
+    except pd.errors.EmptyDataError:
+        expenses_df = pd.DataFrame(columns=["Description", "Amount", "Category"])
+else:
+    expenses_df = pd.DataFrame(columns=["Description", "Amount", "Category"])
+
+# Globals
+budget = 0
+
+# App Setup
+app = tb.Window(themename="cyborg")  
+app.title(" Budget Management App")
+app.geometry("900x600")
+
+# Sidebar Frame
+sidebar = tb.Frame(app, padding=10, bootstyle="info")
+sidebar.pack(side=LEFT, fill=Y)
+
+content_frame = tb.Frame(app, padding=20)
+content_frame.pack(side=RIGHT, fill=BOTH, expand=True)
+
+# Sidebar Buttons
+def clear_frame():
+    for widget in content_frame.winfo_children():
+        widget.destroy()
+
+def show_home():
+    clear_frame()
+    tb.Label(content_frame, text=" Dashboard", font=("Helvetica", 24), bootstyle="success").pack(pady=20)
+    tb.Label(content_frame, text=f"Current Budget: ₹{budget:.2f}", font=("Helvetica", 18)).pack(pady=10)
+
+def set_budget():
+    global budget
+    try:
+        budget = float(budget_entry.get())
+        messagebox.showinfo("Success", f"Budget set to ₹{budget:.2f}")
+        budget_entry.delete(0, tk.END)
+        show_home()
+    except ValueError:
+        messagebox.showerror("Invalid", "Enter a valid number")
+
+def show_add():
+    clear_frame()
+    tb.Label(content_frame, text=" Add Expense", font=("Helvetica", 24), bootstyle="success").pack(pady=10)
+
+    form = tb.Frame(content_frame)
+    form.pack(pady=10)
+
+    tb.Label(form, text="Description:").grid(row=0, column=0, padx=10, pady=5)
+    entry_desc = tb.Entry(form, width=30)
+    entry_desc.grid(row=0, column=1, pady=5)
+
+    tb.Label(form, text="Amount:").grid(row=1, column=0, padx=10, pady=5)
+    entry_amt = tb.Entry(form, width=30)
+    entry_amt.grid(row=1, column=1, pady=5)
+
+    tb.Label(form, text="Category:").grid(row=2, column=0, padx=10, pady=5)
+    combo_cat = tb.Combobox(form, values=["Food", "Transport", "Entertainment", "Utilities", "Other"], width=28)
+    combo_cat.grid(row=2, column=1, pady=5)
+
+    def save_expense():
+        desc = entry_desc.get()
+        amt = entry_amt.get()
+        cat = combo_cat.get()
+        if not desc or not amt or not cat:
+            messagebox.showerror("Missing Data", "Fill all fields")
+            return
+        try:
+            amt = float(amt)
+        except:
+            messagebox.showerror("Invalid", "Amount must be a number")
+            return
+        global expenses_df
+        new = pd.DataFrame([[desc, amt, cat]], columns=["Description", "Amount", "Category"])
+        expenses_df = pd.concat([expenses_df, new], ignore_index=True)
+        expenses_df.to_csv(EXPENSES_FILE, index=False)
+        entry_desc.delete(0, tk.END)
+        entry_amt.delete(0, tk.END)
+        combo_cat.set("")
+        messagebox.showinfo("Success", "Expense added!")
+
+    tb.Button(content_frame, text="Add Expense", command=save_expense, bootstyle="success-outline").pack(pady=10)
+
+def show_view():
+    clear_frame()
+    tb.Label(content_frame, text="View Expenses", font=("Helvetica", 24), bootstyle="success").pack(pady=10)
+
+    tree_frame = tb.Frame(content_frame)
+    tree_frame.pack(fill=BOTH, expand=True)
+
+    tree = ttk.Treeview(tree_frame, columns=("Description", "Amount", "Category"), show="headings")
+    tree.heading("Description", text="Description")
+    tree.heading("Amount", text="Amount")
+    tree.heading("Category", text="Category")
+    tree.pack(fill=BOTH, expand=True)
+
+    for i in tree.get_children():
+        tree.delete(i)
+
+    for _, row in expenses_df.iterrows():
+        tree.insert("", tk.END, values=tuple(row))
+
+    def delete_selected():
+        selected = tree.selection()
+        if not selected:
+            messagebox.showwarning("Select row", "Please select an expense to delete")
+            return
+        index = tree.index(selected[0])
+        tree.delete(selected[0])
+        global expenses_df
+        expenses_df.drop(index, inplace=True)
+        expenses_df.reset_index(drop=True, inplace=True)
+        expenses_df.to_csv(EXPENSES_FILE, index=False)
+
+    tb.Button(content_frame, text="Delete Selected", command=delete_selected, bootstyle="danger-outline").pack(pady=10)
+
+def show_export():
+    clear_frame()
+    tb.Label(content_frame, text=" Export Report", font=("Helvetica", 24), bootstyle="success").pack(pady=10)
+
+    if expenses_df.empty:
+        tb.Label(content_frame, text="No data available to generate report.", bootstyle="warning").pack(pady=20)
+        return
+
+    def generate():
+        totals = expenses_df.groupby("Category")["Amount"].sum()
+        plt.figure(figsize=(6,6))
+        plt.pie(totals, labels=totals.index, autopct="%1.1f%%", startangle=140)
+        plt.title("Expense Distribution")
+        plt.show()
+
+    tb.Button(content_frame, text="Generate Pie Chart", command=generate, bootstyle="info-outline").pack(pady=20)
+
+# Add sidebar buttons
+tb.Label(sidebar, text="Menu", font=("Arial", 16), bootstyle="inverse-info").pack(pady=10)
+
+budget_entry = tb.Entry(sidebar, width=15)
+budget_entry.pack(pady=5)
+tb.Button(sidebar, text="Set Budget", command=set_budget, bootstyle="primary").pack(pady=5)
+tb.Button(sidebar, text=" Home", command=show_home, bootstyle="secondary-outline").pack(fill=X, pady=2)
+tb.Button(sidebar, text=" Add", command=show_add, bootstyle="secondary-outline").pack(fill=X, pady=2)
+tb.Button(sidebar, text=" View", command=show_view, bootstyle="secondary-outline").pack(fill=X, pady=2)
+tb.Button(sidebar, text=" Export", command=show_export, bootstyle="secondary-outline").pack(fill=X, pady=2)
+tb.Button(sidebar, text=" Exit", command=app.quit, bootstyle="danger").pack(fill=X, pady=20)
+
+# Launch home on start
+show_home()
+app.mainloop()
